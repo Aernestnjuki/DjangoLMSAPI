@@ -30,7 +30,7 @@ class User(AbstractUser):
 
 
 class Profile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     image = models.FileField(upload_to='lms-file', default='default.jpg', null=True, blank=True)
     full_name = models.CharField(max_length=100, null=True, blank=True)
     country = models.CharField(max_length=100, null=True, blank=True)
@@ -51,5 +51,5 @@ class Profile(models.Model):
 
     @receiver(post_save, sender=User)
     def automatically_create_user_profile(sender, instance, **kwargs):
-        create_prifile = Profile.objects.create(user=instance)
-        create_prifile.save()
+        create_profile = Profile.objects.create(user=instance)
+        create_profile.save()
