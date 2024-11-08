@@ -8,7 +8,8 @@ class User(AbstractUser):
     username = models.CharField(unique=True, max_length=100)
     email = models.EmailField(unique=True)
     full_name = models.CharField(unique=True, max_length=200)
-    otp = models.CharField(unique=True, max_length=100, null=True, blank=True)
+    otp = models.CharField(max_length=100, null=True, blank=True)
+    refresh_token = models.CharField(max_length=1000, null=True, blank=True)
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username']
