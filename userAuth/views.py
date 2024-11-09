@@ -14,10 +14,6 @@ from rest_framework.response import Response
 from django.core.mail import EmailMultiAlternatives
 from api.settings import EMAIL_HOST_USER
 
-# recipent_list = [email]
-
-# send_mail(subject, message, Email_host_user, recipient_list, fail_silently=True)
-
 # login view
 class MyTokenObtainPairView(TokenObtainPairView):
     serializer_class = api_serializer.MyTokenObtainPairSerializer
@@ -70,6 +66,8 @@ class PasswordEmailVerifyAPIView(generics.RetrieveAPIView):
             text_body = render_to_string("email/password_reset.txt", context)
             html_body = render_to_string("email/password_reset.html", context)
 
+            print(EMAIL_HOST_USER)
+
             msg = EmailMultiAlternatives(
                 subject=subject,
                 from_email=EMAIL_HOST_USER,
@@ -79,9 +77,6 @@ class PasswordEmailVerifyAPIView(generics.RetrieveAPIView):
 
             msg.attach_alternative(html_body, 'text/html')
             msg.send()
-
-            
-
         return user
     
 
@@ -102,8 +97,6 @@ class PasswordChangeAPIView(generics.CreateAPIView):
             user.set_password(password)
             user.otp = ''
             user.save()
-
             return Response({"Message": "Password changed successfully"}, status=status.HTTP_201_CREATED)
-        
         else:
             return Response({"Error": "User does not exist"}, status=status.HTTP_404_NOT_FOUND)
