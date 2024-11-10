@@ -42,9 +42,6 @@ class PasswordEmailVerifyAPIView(generics.RetrieveAPIView):
         email = self.kwargs['email']
 
         user = User.objects.filter(email=email).first()
-
-        print(user)
-
         if user:
             uuidb64 = user.pk
             refresh = RefreshToken.for_user(user)
@@ -66,15 +63,12 @@ class PasswordEmailVerifyAPIView(generics.RetrieveAPIView):
             text_body = render_to_string("email/password_reset.txt", context)
             html_body = render_to_string("email/password_reset.html", context)
 
-            print(EMAIL_HOST_USER)
-
             msg = EmailMultiAlternatives(
                 subject=subject,
                 from_email=EMAIL_HOST_USER,
                 to=[user.email],
                 body=text_body
             )
-
             msg.attach_alternative(html_body, 'text/html')
             msg.send()
         return user
