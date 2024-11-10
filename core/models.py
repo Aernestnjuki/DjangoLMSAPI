@@ -86,10 +86,10 @@ class Course(models.Model):
     title = models.CharField(max_length=200)
     description = models.TextField(null=True, blank=True)
     price = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
-    language = models.CharField(choices=LANGUAGE, default='English')
-    level = models.CharField(choices=LEVEL, default='Beginner')
-    platform_status = models.CharField(choices=PLATFORM_STATUS, default='Published')
-    teacher_course_status = models.CharField(choices=TEACHER_STATUS, default='Published')
+    language = models.CharField(max_length=100, choices=LANGUAGE, default='English')
+    level = models.CharField(max_length=100, choices=LEVEL, default='Beginner')
+    platform_status = models.CharField(max_length=100, choices=PLATFORM_STATUS, default='Published')
+    teacher_course_status = models.CharField(max_length=100, choices=TEACHER_STATUS, default='Published')
     featured = models.BooleanField(default=False)
     course_id = ShortUUIDField(unique=True, length=6, max_length=20, alphabet='1234567890')
     slug = models.SlugField(unique=True, null=True, blank=True)
@@ -102,3 +102,63 @@ class Course(models.Model):
         if self.slug == '' or self.slug == None:
             self.slug = slugify(self.title)
         super(Course, self).save(*args, **kwargs)
+
+    # get stuednts enrolled in a given course
+    def students(self):
+        return EnrolledCourse.objects.filter(course=self)
+    
+    # get all lesson parts in a course curriculum eg part a can have 5 lesson etc
+    def curriculum(self):
+        return VariantItem.objects.filter(variant__course=self)
+    
+    def lectures(self):
+        return VariantItem.objects.filter(variant__course=self)
+    
+    # get average rating of a course
+    def average_rating(self):
+        average_rating = Review.objects.filter(course=self, active=True).aggregate(avg_rating=models.Avg('rating'))
+        return average_rating['avg_rating']
+    
+    def rating_count(self):
+        return Review.objects.filter(course=self, active=True).count()
+    
+    # get the reviews
+    def reviews(self):
+        return Review.objects.filter(course=self, active=True)
+    
+
+# variant model is like all the section in a full course containing videos related to that section
+class Variant(models.Model):
+    course = models.ForeignKey(Course, on_delete=models.CASCADE)
+    title = models.CharField(max_length=500)
+    variant_id = ShortUUIDField(unique=True, length=5, max_length=20, alphabet='1234567890')
+    date = models.DateTimeField(default=timezone.now)
+
+    def __str__(self):
+        return self.title
+    
+    # get all lession in that course section
+    def variant_item(self):
+        return VariantItem.ojects.filter(variant=self)
+    
+# model to hold all the lessons in the Variant course models
+class VariantItem(models.Model):
+    variant = models.ForeignKey(Variant, on_delete=models.CASCADE, related_name='variant_item')
+    title = models.CharField(max_length=500)
+    description = models.TextField(null=True, blank=True)
+    file = models.FileField(upload_to='lms-file')
+    duration = models.DurationField(null=True, blank=True)
+    content_duration = models.CharField(max_length=1000, null=True, blank=True)
+    preview = models.BooleanField(default=False)
+    variant_item_id = ShortUUIDField(unique=True, length=6, max_length=20, alphabet='1234567890')
+    data = models.DateTimeField(default=timezone.now)
+
+    def __str__(self):
+        return f'{self.variant.title} - {self.title}'
+    
+    # get the actual length of the uploaded video in min and sec
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+
+        if self.file:
+            clip = None
