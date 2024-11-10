@@ -2,6 +2,9 @@ from django.db import models
 from django.utils.text import slugify
 from shortuuid.django_fields import ShortUUIDField
 from django.utils import timezone
+from moviepy.editor import VideoFileClip
+
+import math
 
 from userAuth.models import User, Profile
 
@@ -156,9 +159,57 @@ class VariantItem(models.Model):
     def __str__(self):
         return f'{self.variant.title} - {self.title}'
     
-    # get the actual length of the uploaded video in min and sec
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
 
+        # get the actual length of the uploaded video in min and sec
         if self.file:
-            clip = None
+            clip = VideoFileClip(self.file.path)
+            deration_time = clip.duration
+            minutes, remainder = divmod(deration_time, 60)
+            minutes = math.floor(minutes)
+            seconds = math.floor(remainder)
+
+            self.content_duration = f'{minutes}m {seconds}s'
+            super().save(update_fields=['content_duration'])
+
+
+class Question_Answer(models.Model):
+    course = models.ForeignKey(Course, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    title = models.CharField(max_length=100, null=True, blank=True)
+    qa_id = ShortUUIDField(unique=True, length=6, max_length=20, alphabet='1234567890')
+    data = models.DateTimeField(default=timezone.now)
+
+    def __str__(self):
+        return f'{self.user.username} = {self.course.title}'
+    
+    # order questions from newest to oldest
+    class Meta:
+        ordering = ['-date']
+
+    def messages(self):
+        return Question_Answer_Message.objects.filter(question=self)
+    
+    # get the user posting the questiion Profile pic
+    def profile(self):
+        return Profile.objects.get(user=self.user)
+    
+class Question_Answer_Message(models.Model):
+    course = models.ForeignKey(Course, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    question = models.ForeignKey(Question_Answer, on_delete=models.SET_NULL, null=True, blank=True)
+    message = models.TextField(null=True, blank=True)
+    qam_id = ShortUUIDField(unique=True, length=6, max_length=20, alphabet='1234567890')
+    data = models.DateTimeField(default=timezone.now)
+
+    def __str__(self):
+        return f'{self.user.username} = {self.course.title}'
+    
+    # order messages from oldest to newest
+    class Meta:
+        ordering = ['date']
+    
+    # get the user posting the questiion Profile pic
+    def profile(self):
+        return Profile.objects.get(user=self.user)
