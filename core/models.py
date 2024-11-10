@@ -114,7 +114,7 @@ class Course(models.Model):
     teacher_course_status = models.CharField(max_length=100, choices=TEACHER_STATUS, default='Published')
     featured = models.BooleanField(default=False)
     course_id = ShortUUIDField(unique=True, length=6, max_length=20, alphabet='1234567890')
-    slug = models.SlugField(unique=True, null=True, blank=True)
+    slug = models.SlugField(null=True, blank=True)
     date = models.DateTimeField(default=timezone.now)
 
     def __str__(self):

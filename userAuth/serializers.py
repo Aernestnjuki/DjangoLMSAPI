@@ -185,7 +185,7 @@ class EnrolledCourseSerializer(serializers.ModelSerializer):
 
 class CourseSerialiser(serializers.ModelSerializer):
 
-    student = EnrolledCourseSerializer(many=True)
+    students = EnrolledCourseSerializer(many=True)
     curriculum = VariantItemSerializer(many=True)
     lectures = VariantItemSerializer(many=True)
 
@@ -199,7 +199,7 @@ class CourseSerialiser(serializers.ModelSerializer):
             'title',
             'description',
             'price',
-            'languuage',
+            'language',
             'level',
             'platform_status',
             'teacher_course_status',
