@@ -57,7 +57,7 @@ class CartAPIView(generics.CreateAPIView):
         if country_object != None:
             tax_rate = country_object.tax_rate / 100
         else:
-            tax_rate = 0
+            tax_rate = 3 / 100
 
         cart = api_models.Cart.objects.filter(cart_id=cart_id, course=course).first()
 
@@ -65,7 +65,7 @@ class CartAPIView(generics.CreateAPIView):
             cart.course = course
             cart.user = user
             cart.price = price
-            cart.tax_fee = Decimal(tax_rate)
+            cart.tax_fee = Decimal(price) * Decimal(tax_rate)
             cart.country = country
             cart.cart_id = cart_id
             cart.totak = Decimal(price) + Decimal(tax_rate)
@@ -84,3 +84,18 @@ class CartAPIView(generics.CreateAPIView):
             cart.save()
 
             return Response({"message": "Cart created Successfully"}, status=status.HTTP_201_CREATED)
+        
+class CartListAPIView(generics.ListAPIView):
+    serializer_class = api_serilizers.CartSerializer
+    permission_classes = [AllowAny]
+    queryset = api_models.Cart.objects.all()
+
+class CartItemDeleteAPIView(generics.DestroyAPIView):
+    serializer_class = api_serilizers.CartSerializer
+    permission_classes = [AllowAny]
+
+    def get_object(self):
+        cart_id = self.kwargs['cart_id']
+        item_id = self.kwargs['item_id']
+
+        return api_models.Cart.objects.filter(cart_id=cart_id, id=item_id).first()
