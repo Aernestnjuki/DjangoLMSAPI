@@ -33,7 +33,6 @@ class CartAPIView(generics.CreateAPIView):
     serializer_class = api_serilizers.CartSerializer
     permission_classes = [AllowAny]
 
-    # overridding the default create function
     def create(self, request, *args, **kwargs):
         course_id = request.data['course_id']
         user_id = request.data['user_id']
@@ -41,11 +40,8 @@ class CartAPIView(generics.CreateAPIView):
         country_name = request.data['country_name']
         cart_id = request.data['cart_id']
 
-        # getting the actual course id
         course = api_models.Course.objects.filter(id=course_id).first()
-        print("course_id *******:", course_id)
 
-        # check if user exists first before adding product to cart
         if user_id != 'undefined':
             user = api_models.User.objects.filter(id=user_id).first()
         else:
@@ -58,7 +54,6 @@ class CartAPIView(generics.CreateAPIView):
             country_object = None
             country = 'Japan'
 
-        # get tax_rate of an existing country
         if country_object != None:
             tax_rate = country_object.tax_rate / 100
         else:
