@@ -8,6 +8,7 @@ from core import models as api_models
 from userAuth import serializers as api_serilizers
 
 from decimal import Decimal
+import math
 
 class CategoryListAPIView(generics.ListAPIView):
     queryset =api_models.Category.objects.all()
@@ -99,3 +100,34 @@ class CartItemDeleteAPIView(generics.DestroyAPIView):
         item_id = self.kwargs['item_id']
 
         return api_models.Cart.objects.filter(cart_id=cart_id, id=item_id).first()
+    
+class CartStatsAPIView(generics.RetrieveAPIView):
+    serializer_class = api_serilizers.CartSerializer
+    permission_classes = [AllowAny]
+    lookup_field = 'user_id'
+
+    def get_queryset(self):
+        user_id = self.kwargs['user_id']
+        queryset = api_models.Cart.objects.filter(user=user_id)
+        return queryset
+    
+    def get(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        total_price = 0.00
+        total_tax = 0.00
+        total_total = 0.00
+
+        for cart_item in queryset:
+            total_price += float(cart_item.price)
+            total_tax += float(cart_item.tax_fee)
+            total_total += round(float(cart_item.totak), 2)
+
+        data = {
+            'price': total_price,
+            'tax': total_tax,
+            'total': total_total
+        }
+
+        return Response(data, status=status.HTTP_200_OK)
+
