@@ -17,4 +17,5 @@ urlpatterns = [
     path('course/category/', core_views.CategoryListAPIView.as_view()),
     path('course/course-list/', core_views.CourseListApiView.as_view()),
     path('course/course-detail/<slug>/', core_views.CourseDetailAPIView.as_view()),
+    path('course/cart/', core_views.CartAPIView.as_view()),
 ]
