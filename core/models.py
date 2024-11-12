@@ -278,6 +278,7 @@ class CartOrderItem(models.Model):
     teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE)
     order = models.ForeignKey(CartOrder, on_delete=models.CASCADE, related_name='orderItem')
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='order_item')
+    price = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
     tax_fee = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
     total = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
     initial_total = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
