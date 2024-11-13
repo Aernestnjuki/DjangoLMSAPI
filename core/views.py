@@ -1,4 +1,5 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
+from django.conf import settings
 
 from rest_framework import generics, status
 from rest_framework.permissions import AllowAny
@@ -9,6 +10,9 @@ from userAuth import serializers as api_serilizers
 
 from decimal import Decimal
 import math
+import stripe
+
+stripe.api_key = settings.STRIPE_API_KEY
 
 class CategoryListAPIView(generics.ListAPIView):
     queryset =api_models.Category.objects.all()
@@ -193,3 +197,83 @@ class CheckOutAPIView(generics.RetrieveAPIView):
     permission_classes = [AllowAny]
     queryset = api_models.CartOrder.objects.all()
     lookup_field = 'oid'
+
+class CouponAPplyAPIView(generics.CreateAPIView):
+    serializer_class = api_serilizers.CouponSerializer
+    permission_classes = [AllowAny]
+
+    def create(self, request, *args, **kwargs):
+        order_oid = request.data['order_oid']
+        coupon_code = request.data['coupon_code']
+
+        order = api_models.CartOrder.objects.get(oid=order_oid)
+        coupon = api_models.Coupon.objects.get(code=coupon_code)
+
+        if coupon:
+            order_items = api_models.CartOrderItem.objects.filter(order=order, teacher=coupon.teacter)
+
+            for i in order_items:
+                if not coupon in i.coupon.all():
+                    discount = i.total * coupon.discount / 100
+
+                    i.total -= discount
+                    i.price -= discount
+                    i.saves += discount
+                    i.applied_coupon = True
+                    i.coupon.add(coupon)
+
+                    order.coupon.add(coupon)
+                    order.total -= discount
+                    order.sub_total -= discount
+                    order.saves += discount
+
+                    i.save()
+                    order.save()
+                    coupon.used_by.add(order.student)
+                    return Response({'Message': 'Coupon found and activated'}, status=status.HTTP_201_CREATED)
+                else:
+                    return Response({'Message': 'Coupon already applied'}, status=status.HTTP_200_OK)
+            
+        else:
+             return Response({'Error': 'Coupon not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+
+class StripeCheckOutAPIVew(generics.CreateAPIView):
+    serializer_class = api_serilizers.CartOrderSerializer
+    permission_classes = [AllowAny]
+
+    def create(self, request, *args, **kwargs):
+        order_oid = self.kwargs['order_oid']
+        order = api_models.CartOrder.objects.get(oid=order_oid)
+
+        if not order:
+            return Response({'Error': 'Order not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+
+        try:
+            checkout_session = stripe.checkout.Session.create(
+                customer_email=order.email,
+                payment_method_types=['card'],
+                line_items=[
+                    {
+                        'price_data': {
+                            'currency': 'usd',
+                            'product_data': {
+                                'name': order.full_name
+                            },
+                            'unit_amount': int(order.total)
+                        },
+                        'quantity': 1
+                    }
+                ],
+                mode='payment',
+                success_url=settings.FRONTEND_SITE_URL + "payment-success/" + order.oid + "?session_id={CHECKOUT_SESSION_ID}",
+                cancel_url=settings.FRONTEND_SITE_URL + "payment-failed/"
+            )
+
+            order.stripe_session_id = checkout_session.id
+
+            return redirect(checkout_session.url)
+        except: 
+            return Response({'Error': 'Somethong when wrong while making payment'}, status=status.HTTP_400_BAD_REQUEST)
+        

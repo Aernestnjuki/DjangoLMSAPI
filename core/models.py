@@ -283,7 +283,7 @@ class CartOrderItem(models.Model):
     total = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
     initial_total = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
     saves = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
-    coupon = models.ForeignKey('core.Coupon', on_delete=models.SET_NULL, null=True, blank=True)
+    coupon = models.ManyToManyField('core.Coupon', blank=True)
     applied_coupon = models.BooleanField(default=False)
     oid = ShortUUIDField(unique=True, length=6, max_length=20, alphabet='1234567890')
     date = models.DateTimeField(default=timezone.now)
@@ -395,7 +395,7 @@ class Coupon(models.Model):
     teacter = models.ForeignKey(Teacher, on_delete=models.SET_NULL, null=True, blank=True)
     used_by = models.ManyToManyField(User, blank=True)
     code = models.CharField(max_length=50)
-    discount = models.IntegerField(default=3)
+    discount = models.IntegerField(default=25)
     active = models.BooleanField(default=False)
     date = models.DateTimeField(default=timezone.now)
 
