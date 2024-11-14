@@ -4,6 +4,7 @@ from django.conf import settings
 from rest_framework import generics, status
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
+import stripe.error
 
 from core import models as api_models
 from userAuth import serializers as api_serilizers
@@ -274,6 +275,6 @@ class StripeCheckOutAPIVew(generics.CreateAPIView):
             order.stripe_session_id = checkout_session.id
 
             return redirect(checkout_session.url)
-        except: 
-            return Response({'Error': 'Somethong when wrong while making payment'}, status=status.HTTP_400_BAD_REQUEST)
+        except stripe.error.StripeError(e) : 
+            return Response({'Error': f'Somethong when wrong while making payment. {str(e)}'}, status=status.HTTP_400_BAD_REQUEST)
         
